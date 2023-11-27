@@ -9,6 +9,8 @@ export default function AdditionalPage() {
   const [selectConditionValue, setSelectConditionValue] = React.useState('is equal to');
   const [active, setActive] = React.useState(false);
   const [value, setValue] = React.useState('0');
+  const [loader1, setLoader1] = React.useState(false);
+  const [loader2, setLoader2] = React.useState(false);
 
   const resourceName = { singular: 'product', plural: 'products' };
   const { selectedResources, allResourcesSelected, handleSelectionChange } = P.useIndexResourceState(getProductsData);
@@ -53,7 +55,7 @@ export default function AdditionalPage() {
                 </P.FormLayout.Group>
               </P.FormLayout>
             </P.LegacyStack.Item>
-            <P.Button icon={SearchMajor} onClick={handleFetchProducts} accessibilityLabel="Search item" />
+            <P.Button icon={SearchMajor} onClick={handleFetchProducts} loading={loader1} accessibilityLabel="Search item" />
           </P.LegacyStack>
         </P.Layout.Section>
 
@@ -138,6 +140,7 @@ export default function AdditionalPage() {
           primaryAction={{
             content: 'Change Price',
             onAction: handleSubmit,
+            loading: loader2
           }}
           secondaryActions={[
             {
@@ -165,7 +168,7 @@ export default function AdditionalPage() {
 
   async function handleFetchProducts() {
     try {
-
+      setLoader1(true);
       const response = await fetch("/api/fetch/products", {
         method: "POST",
         headers: {
@@ -180,7 +183,11 @@ export default function AdditionalPage() {
 
       console.log("response", response);
 
-      if (response.success == true) setProductsData(response.data);
+      if (response.success == true) {
+        setProductsData(response.data);
+        if (response.data.length == 0) alert("No products found, try searching for something else");
+      }
+      setLoader1(false);
     } catch (error) {
       console.log("ERROR", error);
     }
@@ -188,6 +195,7 @@ export default function AdditionalPage() {
 
   async function handleSubmit() {
     try {
+      setLoader2(true);
       const arr = [];
       for (let i = 0; i < getProductsData.length; i++) {
         arr.push(getProductsData[i].node.variants.edges[0].node.id);
@@ -204,6 +212,7 @@ export default function AdditionalPage() {
         })
       }).then(response => response.json());
 
+      setLoader2(false);
       handleChange();
 
       await handleFetchProducts();
